@@ -4,6 +4,7 @@ import { Save, Link, ChevronDown, ChevronRight, Star } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { SavePromptDialog } from '../sidebar/SavePromptDialog';
+import { NodeFloatingToolbar } from './NodeFloatingToolbar';
 import type { PromptNodeData } from '../types';
 
 interface Props {
@@ -58,12 +59,15 @@ function PromptNodeComponent({ id, data, selected }: Props) {
 
   return (
     <>
+      <NodeFloatingToolbar nodeId={id} selected={!!selected} color={data.color} />
       <div
-        className={`relative bg-zinc-800 rounded-lg min-w-[220px] max-w-[320px] shadow-xl border ${
-          selected ? 'border-emerald-400' : 'border-zinc-600'
-        }`}
+        className="relative bg-zinc-800 rounded-lg min-w-[220px] max-w-[320px] shadow-xl border"
+        style={{ borderColor: selected ? '#34d399' : (data.color ?? '#52525b') }}
       >
-        <div className="flex items-center gap-1.5 px-2 py-2 border-b border-zinc-700">
+        <div
+          className="flex items-center gap-1.5 px-2 py-2 border-b border-zinc-700"
+          style={data.color ? { backgroundColor: `${data.color}26` } : undefined}
+        >
           <button
             onClick={() => setCollapsed((c) => !c)}
             onMouseDown={(e) => e.stopPropagation()}

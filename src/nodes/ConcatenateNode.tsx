@@ -2,6 +2,7 @@ import { memo, useCallback, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
+import { NodeFloatingToolbar } from './NodeFloatingToolbar';
 import type { ConcatNodeData } from '../types';
 
 const HEADER_H = 36;
@@ -31,10 +32,11 @@ function ConcatenateNodeComponent({ id, data, selected }: Props) {
   );
 
   return (
+    <>
+    <NodeFloatingToolbar nodeId={id} selected={!!selected} color={data.color} />
     <div
-      className={`bg-zinc-800 rounded-lg min-w-[240px] shadow-xl border relative ${
-        selected ? 'border-emerald-400' : 'border-zinc-600'
-      }`}
+      className="bg-zinc-800 rounded-lg min-w-[240px] shadow-xl border relative"
+      style={{ borderColor: selected ? '#34d399' : (data.color ?? '#52525b') }}
     >
       {/* Input handles — absolutely positioned; hidden when collapsed */}
       {!collapsed &&
@@ -61,7 +63,10 @@ function ConcatenateNodeComponent({ id, data, selected }: Props) {
       )}
 
       {/* Header */}
-      <div className="h-9 flex items-center gap-1.5 px-2 border-b border-zinc-700">
+      <div
+        className="h-9 flex items-center gap-1.5 px-2 border-b border-zinc-700"
+        style={data.color ? { backgroundColor: `${data.color}26` } : undefined}
+      >
         <button
           onClick={() => setCollapsed((c) => !c)}
           onMouseDown={(e) => e.stopPropagation()}
@@ -112,6 +117,7 @@ function ConcatenateNodeComponent({ id, data, selected }: Props) {
 
       <Handle type="source" position={Position.Right} id="output" title="STRING output" />
     </div>
+    </>
   );
 }
 

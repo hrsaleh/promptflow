@@ -6,17 +6,20 @@ export interface PromptNodeData extends Record<string, unknown> {
   title: string;
   content: string;
   linkedPromptId?: string;
+  color?: string;
 }
 
 export interface ConcatNodeData extends Record<string, unknown> {
   inputCount: number;
   delimiter: string;
   cleanWhitespace: boolean;
+  color?: string;
 }
 
 export interface OutputNodeData extends Record<string, unknown> {
   value: string;
   linkedPromptId?: string;
+  color?: string;
 }
 
 export type NodeValueMap = Record<string, string>;

@@ -47,6 +47,7 @@ interface GraphState {
   redo: () => void;
   copySelected: () => void;
   paste: () => void;
+  deleteNodes: (ids: string[]) => void;
 }
 
 export const useGraphStore = create<GraphState>((set, get) => ({
@@ -170,6 +171,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
     );
     set(computeState(nodes, get().edges));
+  },
+
+  deleteNodes: (ids) => {
+    get().snapshot();
+    const idSet = new Set(ids);
+    const newNodes = get().nodes.filter((n) => !idSet.has(n.id));
+    const newEdges = get().edges.filter((e) => !idSet.has(e.source) && !idSet.has(e.target));
+    set(computeState(newNodes, newEdges));
   },
 
   setNodes: (nodes) => set({ nodes }),
