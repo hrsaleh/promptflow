@@ -3,34 +3,32 @@ import { Panel, useReactFlow } from '@xyflow/react';
 import { Undo2, Redo2, Download, Upload, Save } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { useWorkflowStore } from '../store/workflowStore';
-import { useWorkflowLibraryStore } from '../store/workflowLibraryStore';
 import { SaveWorkflowDialog } from '../sidebar/SaveWorkflowDialog';
-import type { WorkflowSnapshot } from '../store/workflowStore';
 
 export function WorkflowBar() {
-  const { getViewport, setViewport } = useReactFlow();
+  const { setViewport } = useReactFlow();
 
-  // Individual selectors — no object selector to avoid infinite re-render loop
-  const past     = useGraphStore((s) => s.past);
-  const future   = useGraphStore((s) => s.future);
-  const undo     = useGraphStore((s) => s.undo);
-  const redo     = useGraphStore((s) => s.redo);
-  const setNodes = useGraphStore((s) => s.setNodes);
-  const setEdges = useGraphStore((s) => s.setEdges);
-  const nodes    = useGraphStore((s) => s.nodes);
-  const edges    = useGraphStore((s) => s.edges);
+  const tabs = useGraphStore((s) => s.tabs);
+  const activeTabId = useGraphStore((s) => s.activeTabId);
+  const undo = useGraphStore((s) => s.undo);
+  const redo = useGraphStore((s) => s.redo);
+  const updateTab = useGraphStore((s) => s.updateTab);
+  const importIntoActiveTab = useGraphStore((s) => s.importIntoActiveTab);
 
-  const lastSaved  = useWorkflowStore((s) => s.lastSaved);
   const exportJSON = useWorkflowStore((s) => s.exportJSON);
   const importJSON = useWorkflowStore((s) => s.importJSON);
 
-  const setCurrentWorkflowId = useWorkflowLibraryStore((s) => s.setCurrentWorkflowId);
+  const activeTab = tabs.find((t) => t.id === activeTabId)!;
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const [saveSnap, setSaveSnap] = useState<WorkflowSnapshot | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleExport = () => {
-    exportJSON({ nodes, edges, viewport: getViewport() });
+    exportJSON({
+      nodes: activeTab.nodes,
+      edges: activeTab.edges,
+      viewport: activeTab.viewport,
+    });
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,27 +36,24 @@ export function WorkflowBar() {
     if (!file) return;
     const snap = await importJSON(file);
     if (!snap) return;
-    setNodes(snap.nodes);
-    setEdges(snap.edges);
-    setCurrentWorkflowId(null);
+    importIntoActiveTab(snap.nodes, snap.edges, snap.viewport);
     requestAnimationFrame(() => setViewport(snap.viewport));
     e.target.value = '';
   };
 
-  const handleSave = () => {
-    setSaveSnap({ nodes, edges, viewport: getViewport() });
+  const onSaved = (id: string, name: string) => {
+    updateTab(activeTabId, { workflowId: id, title: name, isDirty: false });
+    setDialogOpen(false);
   };
 
-  const savedLabel = lastSaved
-    ? `Saved ${Math.round((Date.now() - lastSaved) / 1000)}s ago`
-    : 'Not saved yet';
+  const statusLabel = activeTab.isDirty ? '● Unsaved' : 'Saved';
 
   return (
     <Panel position="top-right">
       <div className="flex items-center gap-1 bg-zinc-800/90 backdrop-blur border border-zinc-700 rounded-lg px-2 py-1.5 shadow-lg">
         <button
           onClick={undo}
-          disabled={past.length === 0}
+          disabled={activeTab.past.length === 0}
           className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title="Undo (⌘Z)"
         >
@@ -66,7 +61,7 @@ export function WorkflowBar() {
         </button>
         <button
           onClick={redo}
-          disabled={future.length === 0}
+          disabled={activeTab.future.length === 0}
           className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title="Redo (⌘⇧Z)"
         >
@@ -76,7 +71,7 @@ export function WorkflowBar() {
         <div className="w-px h-4 bg-zinc-700 mx-1" />
 
         <button
-          onClick={handleSave}
+          onClick={() => setDialogOpen(true)}
           className="p-1 rounded text-zinc-400 hover:text-emerald-400 hover:bg-zinc-700 transition-colors"
           title="Save workflow to library"
         >
@@ -108,11 +103,20 @@ export function WorkflowBar() {
         />
 
         <div className="w-px h-4 bg-zinc-700 mx-1" />
-        <span className="text-zinc-600 text-xs pr-1">{savedLabel}</span>
+        <span
+          className={`text-xs pr-1 ${activeTab.isDirty ? 'text-emerald-500' : 'text-zinc-600'}`}
+        >
+          {statusLabel}
+        </span>
       </div>
 
-      {saveSnap && (
-        <SaveWorkflowDialog snap={saveSnap} onClose={() => setSaveSnap(null)} />
+      {dialogOpen && (
+        <SaveWorkflowDialog
+          snap={{ nodes: activeTab.nodes, edges: activeTab.edges, viewport: activeTab.viewport }}
+          workflowId={activeTab.workflowId}
+          onSaved={onSaved}
+          onClose={() => setDialogOpen(false)}
+        />
       )}
     </Panel>
   );

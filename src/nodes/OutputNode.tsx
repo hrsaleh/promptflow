@@ -15,12 +15,13 @@ interface Props {
 
 function OutputNodeComponent({ id, data, selected }: Props) {
   const updateNodeData = useGraphStore((s) => s.updateNodeData);
-  const edges          = useGraphStore((s) => s.edges);
+  const isConnected = useGraphStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.edges.some((e) => e.target === id) ?? false;
+  });
   const savePrompt    = useLibraryStore((s) => s.savePrompt);
   const toggleBookmark = useLibraryStore((s) => s.toggleBookmark);
   const prompts       = useLibraryStore((s) => s.prompts);
-
-  const isConnected = edges.some((e) => e.target === id);
 
   const [copied, setCopied]       = useState(false);
   const [showDialog, setShowDialog] = useState(false);

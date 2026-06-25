@@ -9,11 +9,12 @@ interface Props {
 }
 
 export function WorkflowItem({ workflow }: Props) {
-  const { updateWorkflow, deleteWorkflow, setPendingLoad, folders } = useWorkflowLibraryStore();
+  const { updateWorkflow, deleteWorkflow, folders } = useWorkflowLibraryStore();
+  const openWorkflowInTab = useGraphStore((s) => s.openWorkflowInTab);
+
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(workflow.name);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmLoad, setConfirmLoad] = useState(false);
   const [movingTo, setMovingTo] = useState(false);
 
   const dateLabel = new Date(workflow.updatedAt).toLocaleDateString(undefined, {
@@ -30,15 +31,6 @@ export function WorkflowItem({ workflow }: Props) {
   const cancelRename = () => {
     setDraft(workflow.name);
     setRenaming(false);
-  };
-
-  const handleLoad = () => {
-    const { nodes } = useGraphStore.getState();
-    if (nodes.length > 0) {
-      setConfirmLoad(true);
-    } else {
-      setPendingLoad(workflow);
-    }
   };
 
   return (
@@ -63,19 +55,6 @@ export function WorkflowItem({ workflow }: Props) {
               <X size={11} />
             </button>
           </div>
-        ) : confirmLoad ? (
-          <div className="flex items-center gap-1 flex-wrap">
-            <span className="text-zinc-400 text-xs">Replace canvas?</span>
-            <button
-              onClick={() => { setConfirmLoad(false); setPendingLoad(workflow); }}
-              className="text-emerald-400 hover:text-emerald-300 text-xs font-medium"
-            >
-              Load
-            </button>
-            <button onClick={() => setConfirmLoad(false)} className="text-zinc-500 hover:text-white p-0.5">
-              <X size={10} />
-            </button>
-          </div>
         ) : (
           <>
             <div className="text-zinc-200 text-xs font-medium truncate leading-tight">
@@ -86,12 +65,12 @@ export function WorkflowItem({ workflow }: Props) {
         )}
       </div>
 
-      {!renaming && !confirmLoad && (
+      {!renaming && (
         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={handleLoad}
+            onClick={() => openWorkflowInTab(workflow)}
             className="text-zinc-600 hover:text-emerald-400 p-0.5 rounded transition-colors"
-            title="Load workflow"
+            title="Open in tab"
           >
             <Play size={11} />
           </button>

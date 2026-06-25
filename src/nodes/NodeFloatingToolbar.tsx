@@ -26,13 +26,15 @@ export function NodeFloatingToolbar({ nodeId, selected, color }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const onDelete = useCallback(() => {
-    const { nodes, deleteNodes } = useGraphStore.getState();
+    const { tabs, activeTabId, deleteNodes } = useGraphStore.getState();
+    const nodes = tabs.find((t) => t.id === activeTabId)?.nodes ?? [];
     const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
     deleteNodes(selectedIds.length > 0 ? selectedIds : [nodeId]);
   }, [nodeId]);
 
   const onPickColor = useCallback((c: string | undefined) => {
-    const { nodes, updateNodeData } = useGraphStore.getState();
+    const { tabs, activeTabId, updateNodeData } = useGraphStore.getState();
+    const nodes = tabs.find((t) => t.id === activeTabId)?.nodes ?? [];
     const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
     const ids = selectedIds.length > 0 ? selectedIds : [nodeId];
     ids.forEach((id) => updateNodeData(id, { color: c }));

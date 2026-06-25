@@ -1,8 +1,5 @@
 import { create } from 'zustand';
-import { db } from '../db/dexie';
 import type { Node, Edge } from '@xyflow/react';
-
-const AUTOSAVE_ID = '__autosave__';
 
 export interface ViewportSnapshot {
   x: number;
@@ -17,34 +14,11 @@ export interface WorkflowSnapshot {
 }
 
 interface WorkflowState {
-  lastSaved: number | null;
-  autosave: (snap: WorkflowSnapshot) => Promise<void>;
-  loadLastSave: () => Promise<WorkflowSnapshot | null>;
   exportJSON: (snap: WorkflowSnapshot) => void;
   importJSON: (file: File) => Promise<WorkflowSnapshot | null>;
 }
 
-export const useWorkflowStore = create<WorkflowState>((set) => ({
-  lastSaved: null,
-
-  autosave: async (snap) => {
-    await db.workflows.put({
-      id: AUTOSAVE_ID,
-      name: 'Autosave',
-      nodes: snap.nodes,
-      edges: snap.edges,
-      viewport: snap.viewport,
-      updatedAt: Date.now(),
-    });
-    set({ lastSaved: Date.now() });
-  },
-
-  loadLastSave: async () => {
-    const saved = await db.workflows.get(AUTOSAVE_ID);
-    if (!saved) return null;
-    return { nodes: saved.nodes, edges: saved.edges, viewport: saved.viewport };
-  },
-
+export const useWorkflowStore = create<WorkflowState>(() => ({
   exportJSON: (snap) => {
     const payload = JSON.stringify({ version: 1, ...snap, exportedAt: Date.now() }, null, 2);
     const blob = new Blob([payload], { type: 'application/json' });

@@ -9,71 +9,48 @@ import {
   useReactFlow,
   type Edge,
   type Connection,
+  type Viewport,
 } from '@xyflow/react';
 import { useGraphStore } from '../store/graphStore';
-import { useWorkflowStore } from '../store/workflowStore';
-import { useWorkflowLibraryStore } from '../store/workflowLibraryStore';
 import { nodeTypes } from '../nodes/registry';
 import { hasCycle } from '../eval/evaluate';
 import { AddNodePalette } from './AddNodePalette';
 import { WorkflowBar } from './WorkflowBar';
 import type { SavedPrompt } from '../types';
 
-const AUTOSAVE_DELAY = 2000;
-
 function FlowCanvas() {
-  const {
-    nodes, edges,
-    onNodesChange, onEdgesChange, onConnect, addNode,
-    undo, redo, copySelected, paste,
-    setNodes, setEdges,
-  } = useGraphStore();
+  const tabs = useGraphStore((s) => s.tabs);
+  const activeTabId = useGraphStore((s) => s.activeTabId);
+  const onNodesChange = useGraphStore((s) => s.onNodesChange);
+  const onEdgesChange = useGraphStore((s) => s.onEdgesChange);
+  const onConnect = useGraphStore((s) => s.onConnect);
+  const addNode = useGraphStore((s) => s.addNode);
+  const setTabViewport = useGraphStore((s) => s.setTabViewport);
+  const undo = useGraphStore((s) => s.undo);
+  const redo = useGraphStore((s) => s.redo);
+  const copySelected = useGraphStore((s) => s.copySelected);
+  const paste = useGraphStore((s) => s.paste);
+
+  const activeTab = tabs.find((t) => t.id === activeTabId)!;
 
   const [palette, setPalette] = useState<{ x: number; y: number } | null>(null);
-  const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
-  const { autosave, loadLastSave } = useWorkflowStore();
-  const pendingLoad = useWorkflowLibraryStore((s) => s.pendingLoad);
-  const setPendingLoad = useWorkflowLibraryStore((s) => s.setPendingLoad);
-  const setCurrentWorkflowId = useWorkflowLibraryStore((s) => s.setCurrentWorkflowId);
+  const { screenToFlowPosition, setViewport } = useReactFlow();
   const lastClickAt = useRef(0);
-  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // ── Load last autosave on mount ──────────────────────────────────────────
+  // ── Restore viewport when switching tabs ─────────────────────────────────
   useEffect(() => {
-    loadLastSave().then((saved) => {
-      if (!saved || saved.nodes.length === 0) return;
-      setNodes(saved.nodes);
-      setEdges(saved.edges);
-      requestAnimationFrame(() => setViewport(saved.viewport));
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Load from workflow library ───────────────────────────────────────────
-  useEffect(() => {
-    if (!pendingLoad) return;
-    setNodes(pendingLoad.nodes);
-    setEdges(pendingLoad.edges);
-    requestAnimationFrame(() => setViewport(pendingLoad.viewport));
-    setCurrentWorkflowId(pendingLoad.id);
-    setPendingLoad(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingLoad]);
-
-  // ── Autosave on graph change ─────────────────────────────────────────────
-  useEffect(() => {
-    clearTimeout(autosaveTimer.current);
-    autosaveTimer.current = setTimeout(() => {
-      autosave({ nodes, edges, viewport: getViewport() });
-    }, AUTOSAVE_DELAY);
-    return () => clearTimeout(autosaveTimer.current);
-  }, [nodes, edges, autosave, getViewport]);
+    requestAnimationFrame(() => setViewport(activeTab.viewport));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTabId, setViewport]);
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const inInput =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
       const mod = e.metaKey || e.ctrlKey;
 
       if (mod && !inInput) {
@@ -81,31 +58,42 @@ function FlowCanvas() {
         if ((e.key === 'z' && e.shiftKey) || e.key === 'y') { e.preventDefault(); redo(); }
         if (e.key === 'c') { e.preventDefault(); copySelected(); }
         if (e.key === 'v') { e.preventDefault(); paste(); }
-        if (e.key === 'a') { e.preventDefault(); /* select-all handled by ReactFlow */ }
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [undo, redo, copySelected, paste]);
 
-  // ── Validation & helpers ─────────────────────────────────────────────────
+  // ── Validation ───────────────────────────────────────────────────────────
   const isValidConnection = useCallback((connection: Edge | Connection) => {
-    const { edges: cur } = useGraphStore.getState();
+    const { tabs: t, activeTabId: id } = useGraphStore.getState();
+    const cur = t.find((tab) => tab.id === id)?.edges ?? [];
     if (!connection.source || !connection.target) return false;
     if (connection.source === connection.target) return false;
     return !hasCycle(connection.source, connection.target, cur);
   }, []);
 
+  const onMoveEnd = useCallback(
+    (_: MouseEvent | TouchEvent | null, vp: Viewport) => {
+      setTabViewport(vp);
+    },
+    [setTabViewport]
+  );
+
+  // ── Pane double-click → palette ──────────────────────────────────────────
   const lastClickAtRef = lastClickAt;
-  const onPaneClick = useCallback((event: React.MouseEvent) => {
-    const now = Date.now();
-    if (now - lastClickAtRef.current < 300) {
-      lastClickAtRef.current = 0;
-      setPalette({ x: event.clientX, y: event.clientY });
-    } else {
-      lastClickAtRef.current = now;
-    }
-  }, [lastClickAtRef]);
+  const onPaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      const now = Date.now();
+      if (now - lastClickAtRef.current < 300) {
+        lastClickAtRef.current = 0;
+        setPalette({ x: event.clientX, y: event.clientY });
+      } else {
+        lastClickAtRef.current = now;
+      }
+    },
+    [lastClickAtRef]
+  );
 
   const addNodeAtScreen = useCallback(
     (_type: string, screenX: number, screenY: number) =>
@@ -140,14 +128,15 @@ function FlowCanvas() {
   return (
     <div className="flex-1 relative w-full h-full">
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={activeTab.nodes}
+        edges={activeTab.edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         isValidConnection={isValidConnection}
         onPaneClick={onPaneClick}
+        onMoveEnd={onMoveEnd}
         onDragOver={onDragOver}
         onDrop={onDrop}
         zoomOnDoubleClick={false}

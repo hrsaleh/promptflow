@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, GitBranch } from 'lucide-react';
 import { Canvas } from './canvas/Canvas';
+import { TabBar } from './canvas/TabBar';
 import { PromptLibrary } from './sidebar/PromptLibrary';
 import { WorkflowLibrary } from './sidebar/WorkflowLibrary';
 import { useLibraryStore } from './store/libraryStore';
@@ -56,7 +57,10 @@ export default function App() {
       <div className="flex-1 flex overflow-hidden">
         <NavRail section={section} onSelect={setSection} />
         {section === 'prompts' ? <PromptLibrary /> : <WorkflowLibrary />}
-        <Canvas />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TabBar />
+          <Canvas />
+        </div>
       </div>
     </div>
   );

@@ -8,16 +8,12 @@ const AUTOSAVE_ID = '__autosave__';
 interface WorkflowLibraryState {
   workflows: Workflow[];
   folders: WorkflowFolder[];
-  currentWorkflowId: string | null;
-  pendingLoad: Workflow | null;
   loaded: boolean;
 
   load: () => Promise<void>;
   saveWorkflow: (name: string, folderId: string | null, snap: WorkflowSnapshot) => Promise<string>;
   updateWorkflow: (id: string, updates: Partial<Omit<Workflow, 'id'>>) => Promise<void>;
   deleteWorkflow: (id: string) => Promise<void>;
-  setCurrentWorkflowId: (id: string | null) => void;
-  setPendingLoad: (w: Workflow | null) => void;
   addFolder: (name: string) => Promise<string>;
   renameFolder: (id: string, name: string) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
@@ -26,8 +22,6 @@ interface WorkflowLibraryState {
 export const useWorkflowLibraryStore = create<WorkflowLibraryState>((set, get) => ({
   workflows: [],
   folders: [],
-  currentWorkflowId: null,
-  pendingLoad: null,
   loaded: false,
 
   load: async () => {
@@ -66,15 +60,8 @@ export const useWorkflowLibraryStore = create<WorkflowLibraryState>((set, get) =
 
   deleteWorkflow: async (id) => {
     await db.workflows.delete(id);
-    const current = get().currentWorkflowId;
-    set({
-      workflows: get().workflows.filter((w) => w.id !== id),
-      currentWorkflowId: current === id ? null : current,
-    });
+    set({ workflows: get().workflows.filter((w) => w.id !== id) });
   },
-
-  setCurrentWorkflowId: (id) => set({ currentWorkflowId: id }),
-  setPendingLoad: (w) => set({ pendingLoad: w }),
 
   addFolder: async (name) => {
     const id = crypto.randomUUID();

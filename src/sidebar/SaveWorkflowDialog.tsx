@@ -5,21 +5,16 @@ import type { WorkflowSnapshot } from '../store/workflowStore';
 
 interface Props {
   snap: WorkflowSnapshot;
+  workflowId: string | null;
+  onSaved: (id: string, name: string) => void;
   onClose: () => void;
 }
 
-export function SaveWorkflowDialog({ snap, onClose }: Props) {
-  const {
-    currentWorkflowId,
-    workflows,
-    folders,
-    saveWorkflow,
-    updateWorkflow,
-    addFolder,
-    setCurrentWorkflowId,
-  } = useWorkflowLibraryStore();
+export function SaveWorkflowDialog({ snap, workflowId, onSaved, onClose }: Props) {
+  const { workflows, folders, saveWorkflow, updateWorkflow, addFolder } =
+    useWorkflowLibraryStore();
 
-  const currentWorkflow = workflows.find((w) => w.id === currentWorkflowId);
+  const currentWorkflow = workflows.find((w) => w.id === workflowId) ?? null;
   const isLinked = !!currentWorkflow;
 
   const [name, setName] = useState(
@@ -47,11 +42,11 @@ export function SaveWorkflowDialog({ snap, onClose }: Props) {
           edges: snap.edges,
           viewport: snap.viewport,
         });
+        onSaved(currentWorkflow!.id, name.trim());
       } else {
         const id = await saveWorkflow(name.trim(), finalFolderId, snap);
-        setCurrentWorkflowId(id);
+        onSaved(id, name.trim());
       }
-      onClose();
     } finally {
       setSaving(false);
     }
