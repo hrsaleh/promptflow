@@ -41,6 +41,12 @@ export interface PromptCategory {
   order: number;
 }
 
+export interface WorkflowFolder {
+  id: string;
+  name: string;
+  order: number;
+}
+
 export interface Workflow {
   id: string;
   name: string;
@@ -48,4 +54,5 @@ export interface Workflow {
   edges: Edge[];
   viewport: { x: number; y: number; zoom: number };
   updatedAt: number;
+  folderId?: string | null;
 }

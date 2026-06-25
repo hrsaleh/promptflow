@@ -12,6 +12,7 @@ import {
 } from '@xyflow/react';
 import { useGraphStore } from '../store/graphStore';
 import { useWorkflowStore } from '../store/workflowStore';
+import { useWorkflowLibraryStore } from '../store/workflowLibraryStore';
 import { nodeTypes } from '../nodes/registry';
 import { hasCycle } from '../eval/evaluate';
 import { AddNodePalette } from './AddNodePalette';
@@ -31,6 +32,9 @@ function FlowCanvas() {
   const [palette, setPalette] = useState<{ x: number; y: number } | null>(null);
   const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const { autosave, loadLastSave } = useWorkflowStore();
+  const pendingLoad = useWorkflowLibraryStore((s) => s.pendingLoad);
+  const setPendingLoad = useWorkflowLibraryStore((s) => s.setPendingLoad);
+  const setCurrentWorkflowId = useWorkflowLibraryStore((s) => s.setCurrentWorkflowId);
   const lastClickAt = useRef(0);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -44,6 +48,17 @@ function FlowCanvas() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Load from workflow library ───────────────────────────────────────────
+  useEffect(() => {
+    if (!pendingLoad) return;
+    setNodes(pendingLoad.nodes);
+    setEdges(pendingLoad.edges);
+    requestAnimationFrame(() => setViewport(pendingLoad.viewport));
+    setCurrentWorkflowId(pendingLoad.id);
+    setPendingLoad(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingLoad]);
 
   // ── Autosave on graph change ─────────────────────────────────────────────
   useEffect(() => {

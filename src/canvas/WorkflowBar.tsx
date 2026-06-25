@@ -1,8 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Panel, useReactFlow } from '@xyflow/react';
-import { Undo2, Redo2, Download, Upload } from 'lucide-react';
+import { Undo2, Redo2, Download, Upload, Save } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { useWorkflowStore } from '../store/workflowStore';
+import { useWorkflowLibraryStore } from '../store/workflowLibraryStore';
+import { SaveWorkflowDialog } from '../sidebar/SaveWorkflowDialog';
+import type { WorkflowSnapshot } from '../store/workflowStore';
 
 export function WorkflowBar() {
   const { getViewport, setViewport } = useReactFlow();
@@ -21,7 +24,10 @@ export function WorkflowBar() {
   const exportJSON = useWorkflowStore((s) => s.exportJSON);
   const importJSON = useWorkflowStore((s) => s.importJSON);
 
+  const setCurrentWorkflowId = useWorkflowLibraryStore((s) => s.setCurrentWorkflowId);
+
   const fileRef = useRef<HTMLInputElement>(null);
+  const [saveSnap, setSaveSnap] = useState<WorkflowSnapshot | null>(null);
 
   const handleExport = () => {
     exportJSON({ nodes, edges, viewport: getViewport() });
@@ -34,8 +40,13 @@ export function WorkflowBar() {
     if (!snap) return;
     setNodes(snap.nodes);
     setEdges(snap.edges);
+    setCurrentWorkflowId(null);
     requestAnimationFrame(() => setViewport(snap.viewport));
     e.target.value = '';
+  };
+
+  const handleSave = () => {
+    setSaveSnap({ nodes, edges, viewport: getViewport() });
   };
 
   const savedLabel = lastSaved
@@ -65,6 +76,16 @@ export function WorkflowBar() {
         <div className="w-px h-4 bg-zinc-700 mx-1" />
 
         <button
+          onClick={handleSave}
+          className="p-1 rounded text-zinc-400 hover:text-emerald-400 hover:bg-zinc-700 transition-colors"
+          title="Save workflow to library"
+        >
+          <Save size={14} />
+        </button>
+
+        <div className="w-px h-4 bg-zinc-700 mx-1" />
+
+        <button
           onClick={handleExport}
           className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
           title="Export workflow JSON"
@@ -89,6 +110,10 @@ export function WorkflowBar() {
         <div className="w-px h-4 bg-zinc-700 mx-1" />
         <span className="text-zinc-600 text-xs pr-1">{savedLabel}</span>
       </div>
+
+      {saveSnap && (
+        <SaveWorkflowDialog snap={saveSnap} onClose={() => setSaveSnap(null)} />
+      )}
     </Panel>
   );
 }
