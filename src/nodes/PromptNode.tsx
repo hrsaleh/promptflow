@@ -1,6 +1,6 @@
 import { memo, useCallback, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Save, Link, ChevronDown, ChevronRight, Star } from 'lucide-react';
+import { Save, Link, ChevronDown, ChevronRight, Star, Copy, Check } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { SavePromptDialog } from '../sidebar/SavePromptDialog';
@@ -21,6 +21,7 @@ function PromptNodeComponent({ id, data, selected }: Props) {
 
   const [showDialog, setShowDialog] = useState(false);
   const [collapsed, setCollapsed]   = useState(false);
+  const [copied, setCopied]         = useState(false);
 
   const linkedPrompt = prompts.find((p) => p.id === data.linkedPromptId);
   const isBookmarked = linkedPrompt?.bookmarked ?? false;
@@ -41,6 +42,12 @@ function PromptNodeComponent({ id, data, selected }: Props) {
     (promptId: string) => updateNodeData(id, { linkedPromptId: promptId }),
     [id, updateNodeData]
   );
+
+  const onCopy = useCallback(() => {
+    navigator.clipboard.writeText(data.content ?? '');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [data.content]);
 
   const onStar = useCallback(async () => {
     if (linkedPrompt) {
@@ -107,6 +114,17 @@ function PromptNodeComponent({ id, data, selected }: Props) {
             title={data.linkedPromptId ? 'Update saved prompt' : 'Save to library'}
           >
             {data.linkedPromptId ? <Link size={13} /> : <Save size={13} />}
+          </button>
+
+          <div className="w-px h-3 bg-zinc-700 mx-0.5" />
+
+          <button
+            onClick={onCopy}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="shrink-0 p-0.5 rounded text-zinc-400 hover:text-emerald-400 transition-colors"
+            title="Copy prompt to clipboard"
+          >
+            {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
           </button>
         </div>
 
