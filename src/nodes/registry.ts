@@ -2,15 +2,26 @@ import type { NodeTypes } from '@xyflow/react';
 import { PromptNode } from './PromptNode';
 import { ConcatenateNode } from './ConcatenateNode';
 import { OutputNode } from './OutputNode';
-import type { PromptNodeData, ConcatNodeData, OutputNodeData } from '../types';
+import { StickyNoteNode } from './StickyNoteNode';
+import type {
+  PromptNodeData,
+  ConcatNodeData,
+  OutputNodeData,
+  StickyNoteNodeData,
+} from '../types';
 
 export const nodeTypes: NodeTypes = {
   prompt: PromptNode as NodeTypes[string],
   concatenate: ConcatenateNode as NodeTypes[string],
   output: OutputNode as NodeTypes[string],
+  stickyNote: StickyNoteNode as NodeTypes[string],
 };
 
-export const nodeDefaults: Record<string, { data: PromptNodeData | ConcatNodeData | OutputNodeData; label: string; description: string }> = {
+export const nodeDefaults: Record<string, {
+  data: PromptNodeData | ConcatNodeData | OutputNodeData | StickyNoteNodeData;
+  label: string;
+  description: string;
+}> = {
   prompt: {
     label: 'Prompt',
     description: 'Text prompt fragment',
@@ -25,6 +36,11 @@ export const nodeDefaults: Record<string, { data: PromptNodeData | ConcatNodeDat
     label: 'Output',
     description: 'Final combined prompt',
     data: { value: '' } satisfies OutputNodeData,
+  },
+  stickyNote: {
+    label: 'Sticky Note',
+    description: 'A colorful note with no wire connections',
+    data: { text: '', color: '#fbbf24' } satisfies StickyNoteNodeData,
   },
 };
 

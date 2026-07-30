@@ -1,6 +1,6 @@
 import type { Node, Edge } from '@xyflow/react';
 
-export type NodeType = 'prompt' | 'concatenate' | 'output';
+export type NodeType = 'prompt' | 'concatenate' | 'output' | 'stickyNote';
 
 export interface PromptNodeData extends Record<string, unknown> {
   title: string;
@@ -19,6 +19,11 @@ export interface ConcatNodeData extends Record<string, unknown> {
 export interface OutputNodeData extends Record<string, unknown> {
   value: string;
   linkedPromptId?: string;
+  color?: string;
+}
+
+export interface StickyNoteNodeData extends Record<string, unknown> {
+  text: string;
   color?: string;
 }
 

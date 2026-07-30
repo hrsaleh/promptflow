@@ -60,7 +60,8 @@ textarea {
 /* Prevent React Flow's default white node-wrapper background from bleeding through */
 .react-flow__node-prompt,
 .react-flow__node-concatenate,
-.react-flow__node-output {
+.react-flow__node-output,
+.react-flow__node-stickyNote {
   background: transparent;
   padding: 0;
   border: none;
