@@ -139,6 +139,7 @@ function FlowCanvas() {
         onMoveEnd={onMoveEnd}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        deleteKeyCode={['Backspace', 'Delete']}
         zoomOnDoubleClick={false}
         snapToGrid
         snapGrid={[16, 16]}
