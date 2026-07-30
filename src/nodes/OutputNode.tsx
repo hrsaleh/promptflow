@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, NodeResizer, Position } from '@xyflow/react';
 import { Copy, Check, Star, Save } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { useLibraryStore } from '../store/libraryStore';
@@ -11,9 +11,11 @@ interface Props {
   id: string;
   data: OutputNodeData;
   selected?: boolean;
+  width?: number;
+  height?: number;
 }
 
-function OutputNodeComponent({ id, data, selected }: Props) {
+function OutputNodeComponent({ id, data, selected, width, height }: Props) {
   const updateNodeData = useGraphStore((s) => s.updateNodeData);
   const isConnected = useGraphStore((s) => {
     const tab = s.tabs.find((t) => t.id === s.activeTabId);
@@ -62,9 +64,23 @@ function OutputNodeComponent({ id, data, selected }: Props) {
     <>
       <NodeFloatingToolbar nodeId={id} selected={!!selected} color={data.color} />
       <div
-        className="relative bg-zinc-800 rounded-lg min-w-[280px] max-w-[420px] shadow-xl border"
-        style={{ borderColor: selected ? '#34d399' : (data.color ?? '#52525b') }}
+        className="relative flex flex-col rounded-lg border bg-zinc-800 shadow-xl"
+        style={{
+          width: width ?? 340,
+          height: height ?? 190,
+          borderColor: selected ? '#34d399' : (data.color ?? '#52525b'),
+        }}
       >
+        <NodeResizer
+          isVisible={!!selected}
+          minWidth={280}
+          minHeight={150}
+          color="#34d399"
+          lineStyle={{ borderWidth: 1 }}
+          handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
+          onResizeStart={() => useGraphStore.getState().snapshot()}
+        />
+
         <Handle type="target" position={Position.Left} id="input" title="STRING input" />
 
         <div
@@ -111,9 +127,9 @@ function OutputNodeComponent({ id, data, selected }: Props) {
           </button>
         </div>
 
-        <div className="p-2">
+        <div className="flex flex-1 min-h-0 flex-col p-2">
           <textarea
-            className={`w-full bg-zinc-900 text-white text-sm rounded p-2 resize-y outline-none border transition-colors min-h-[80px] max-h-[300px] leading-relaxed ${
+            className={`nodrag nowheel min-h-[80px] w-full flex-1 resize-none rounded border bg-zinc-900 p-2 text-sm leading-relaxed text-white outline-none transition-colors ${
               isConnected
                 ? 'border-zinc-700 opacity-70 cursor-default select-text'
                 : 'border-zinc-700 focus:border-emerald-500'

@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, NodeResizer, Position } from '@xyflow/react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { NodeFloatingToolbar } from './NodeFloatingToolbar';
@@ -12,9 +12,11 @@ interface Props {
   id: string;
   data: ConcatNodeData;
   selected?: boolean;
+  width?: number;
+  height?: number;
 }
 
-function ConcatenateNodeComponent({ id, data, selected }: Props) {
+function ConcatenateNodeComponent({ id, data, selected, width, height }: Props) {
   const updateNodeData = useGraphStore((s) => s.updateNodeData);
   const [collapsed, setCollapsed] = useState(false);
   const handles = Array.from({ length: data.inputCount }, (_, i) => i);
@@ -35,9 +37,24 @@ function ConcatenateNodeComponent({ id, data, selected }: Props) {
     <>
     <NodeFloatingToolbar nodeId={id} selected={!!selected} color={data.color} />
     <div
-      className="bg-zinc-800 rounded-lg min-w-[240px] shadow-xl border relative"
-      style={{ borderColor: selected ? '#34d399' : (data.color ?? '#52525b') }}
+      className="relative flex flex-col overflow-hidden rounded-lg border bg-zinc-800 shadow-xl"
+      style={{
+        width: width ?? 260,
+        height: collapsed ? 'auto' : (height ?? 'auto'),
+        minHeight: collapsed ? undefined : HEADER_H + data.inputCount * ROW_H + 82,
+        borderColor: selected ? '#34d399' : (data.color ?? '#52525b'),
+      }}
     >
+      <NodeResizer
+        isVisible={!!selected && !collapsed}
+        minWidth={240}
+        minHeight={HEADER_H + data.inputCount * ROW_H + 82}
+        color="#34d399"
+        lineStyle={{ borderWidth: 1 }}
+        handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
+        onResizeStart={() => useGraphStore.getState().snapshot()}
+      />
+
       {/* Input handles — absolutely positioned; hidden when collapsed */}
       {!collapsed &&
         handles.map((i) => (
@@ -89,7 +106,7 @@ function ConcatenateNodeComponent({ id, data, selected }: Props) {
           </div>
 
           {/* Widgets */}
-          <div className="p-2 space-y-1.5">
+          <div className="flex-1 space-y-1.5 p-2">
             <div className="flex items-center gap-2">
               <label className="text-zinc-400 text-xs w-14 shrink-0">Delimiter</label>
               <input

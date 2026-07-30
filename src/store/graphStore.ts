@@ -233,7 +233,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   onNodesChange: (changes) => {
     const { tabs, activeTabId } = get();
-    const makeDirty = changes.some((c) => c.type !== 'select' && c.type !== 'dimensions');
+    const makeDirty = changes.some((c) => c.type !== 'select');
     set({
       tabs: patchActive(tabs, activeTabId, (tab) => {
         const base = changes.some((c) => c.type === 'remove') ? snapshotTab(tab) : tab;

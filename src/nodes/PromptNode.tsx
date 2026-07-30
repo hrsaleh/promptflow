@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, NodeResizer, Position } from '@xyflow/react';
 import { Save, Link, ChevronDown, ChevronRight, Star, Copy, Check } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { useLibraryStore } from '../store/libraryStore';
@@ -11,9 +11,11 @@ interface Props {
   id: string;
   data: PromptNodeData;
   selected?: boolean;
+  width?: number;
+  height?: number;
 }
 
-function PromptNodeComponent({ id, data, selected }: Props) {
+function PromptNodeComponent({ id, data, selected, width, height }: Props) {
   const updateNodeData  = useGraphStore((s) => s.updateNodeData);
   const savePrompt      = useLibraryStore((s) => s.savePrompt);
   const toggleBookmark  = useLibraryStore((s) => s.toggleBookmark);
@@ -68,9 +70,23 @@ function PromptNodeComponent({ id, data, selected }: Props) {
     <>
       <NodeFloatingToolbar nodeId={id} selected={!!selected} color={data.color} />
       <div
-        className="relative bg-zinc-800 rounded-lg min-w-[220px] max-w-[320px] shadow-xl border"
-        style={{ borderColor: selected ? '#34d399' : (data.color ?? '#52525b') }}
+        className="relative flex flex-col bg-zinc-800 rounded-lg shadow-xl border"
+        style={{
+          width: width ?? 280,
+          height: collapsed ? 'auto' : (height ?? 180),
+          borderColor: selected ? '#34d399' : (data.color ?? '#52525b'),
+        }}
       >
+        <NodeResizer
+          isVisible={!!selected && !collapsed}
+          minWidth={220}
+          minHeight={140}
+          color="#34d399"
+          lineStyle={{ borderWidth: 1 }}
+          handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
+          onResizeStart={() => useGraphStore.getState().snapshot()}
+        />
+
         <div
           className="flex items-center gap-1.5 px-2 py-2 border-b border-zinc-700"
           style={data.color ? { backgroundColor: `${data.color}26` } : undefined}
@@ -129,9 +145,9 @@ function PromptNodeComponent({ id, data, selected }: Props) {
         </div>
 
         {!collapsed && (
-          <div className="p-2">
+          <div className="flex-1 min-h-0 p-2">
             <textarea
-              className="w-full bg-zinc-900 text-white text-sm rounded p-2 resize-y outline-none border border-zinc-700 focus:border-emerald-500 transition-colors min-h-[80px]"
+              className="nodrag nowheel h-full min-h-[80px] w-full resize-none rounded border border-zinc-700 bg-zinc-900 p-2 text-sm text-white outline-none transition-colors focus:border-emerald-500"
               value={data.content}
               onChange={onContentChange}
               placeholder="Enter prompt text…"
