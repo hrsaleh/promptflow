@@ -11,7 +11,8 @@ interface Props {
 export function PromptItem({ prompt }: Props) {
   const { toggleBookmark, deletePrompt, updatePrompt } = useLibraryStore();
   const userId = useAuthStore((s) => s.user?.id);
-  const isOwner = prompt.authorId === userId;
+  const isAdmin = useAuthStore((s) => s.team?.role === 'owner');
+  const canManage = prompt.authorId === userId || isAdmin;
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(prompt.name);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -98,7 +99,7 @@ export function PromptItem({ prompt }: Props) {
           >
             <Star size={11} fill={prompt.bookmarked ? 'currentColor' : 'none'} />
           </button>
-          {isOwner && (
+          {canManage && (
             <button
               onClick={(e) => { e.stopPropagation(); setRenaming(true); setDraft(prompt.name); }}
               className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition-colors"
@@ -107,7 +108,7 @@ export function PromptItem({ prompt }: Props) {
               <Pencil size={11} />
             </button>
           )}
-          {isOwner && (
+          {canManage && (
             confirmDelete ? (
               <>
                 <button

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trash2, Pencil, Check, X, FolderInput, Play } from 'lucide-react';
 import { useWorkflowLibraryStore } from '../store/workflowLibraryStore';
 import { useGraphStore } from '../store/graphStore';
+import { useAuthStore } from '../store/authStore';
 import type { Workflow } from '../types';
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
 export function WorkflowItem({ workflow }: Props) {
   const { updateWorkflow, deleteWorkflow, folders } = useWorkflowLibraryStore();
   const openWorkflowInTab = useGraphStore((s) => s.openWorkflowInTab);
+  const userId = useAuthStore((s) => s.user?.id);
+  const isAdmin = useAuthStore((s) => s.team?.role === 'owner');
+  const canManage = workflow.authorId === userId || isAdmin;
 
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(workflow.name);
@@ -34,7 +38,11 @@ export function WorkflowItem({ workflow }: Props) {
   };
 
   return (
-    <div className="group flex items-start gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-700/60 transition-colors">
+    <div className="group relative flex items-start gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-700/60 transition-colors overflow-hidden">
+      <span
+        className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full"
+        style={{ backgroundColor: workflow.authorColor }}
+      />
       <div className="flex-1 min-w-0">
         {renaming ? (
           <div className="flex items-center gap-1">
@@ -60,7 +68,13 @@ export function WorkflowItem({ workflow }: Props) {
             <div className="text-zinc-200 text-xs font-medium truncate leading-tight">
               {workflow.name}
             </div>
-            <div className="text-zinc-500 text-xs leading-tight mt-0.5">{dateLabel}</div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: workflow.authorColor }} />
+              <span className="text-[10px]" style={{ color: workflow.authorColor }}>
+                {workflow.authorName}
+              </span>
+              <span className="text-zinc-600 text-[10px]">· {dateLabel}</span>
+            </div>
           </>
         )}
       </div>
@@ -75,7 +89,7 @@ export function WorkflowItem({ workflow }: Props) {
             <Play size={11} />
           </button>
 
-          {movingTo ? (
+          {canManage && movingTo ? (
             <select
               autoFocus
               className="bg-zinc-900 text-white text-xs rounded px-1 py-0.5 border border-zinc-700 max-w-[90px]"
@@ -91,7 +105,7 @@ export function WorkflowItem({ workflow }: Props) {
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
-          ) : (
+          ) : canManage ? (
             <button
               onClick={(e) => { e.stopPropagation(); setMovingTo(true); }}
               className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition-colors"
@@ -99,17 +113,19 @@ export function WorkflowItem({ workflow }: Props) {
             >
               <FolderInput size={11} />
             </button>
+          ) : null}
+
+          {canManage && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setRenaming(true); setDraft(workflow.name); }}
+              className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition-colors"
+              title="Rename"
+            >
+              <Pencil size={11} />
+            </button>
           )}
 
-          <button
-            onClick={(e) => { e.stopPropagation(); setRenaming(true); setDraft(workflow.name); }}
-            className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition-colors"
-            title="Rename"
-          >
-            <Pencil size={11} />
-          </button>
-
-          {confirmDelete ? (
+          {canManage && (confirmDelete ? (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); deleteWorkflow(workflow.id); }}
@@ -132,7 +148,7 @@ export function WorkflowItem({ workflow }: Props) {
             >
               <Trash2 size={11} />
             </button>
-          )}
+          ))}
         </div>
       )}
     </div>

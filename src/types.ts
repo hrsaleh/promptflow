@@ -58,4 +58,7 @@ export interface Workflow {
   viewport: { x: number; y: number; zoom: number };
   updatedAt: number;
   folderId?: string | null;
+  authorId: string;
+  authorName: string;
+  authorColor: string;
 }

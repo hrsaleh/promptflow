@@ -41,6 +41,7 @@ function Workspace() {
   const load = useLibraryStore((s) => s.load);
   const unload = useLibraryStore((s) => s.unload);
   const loadWorkflows = useWorkflowLibraryStore((s) => s.load);
+  const unloadWorkflows = useWorkflowLibraryStore((s) => s.unload);
   const [section, setSection] = useState<Section>('prompts');
 
   useEffect(() => {
@@ -48,8 +49,9 @@ function Workspace() {
     loadWorkflows();
     return () => {
       void unload();
+      void unloadWorkflows();
     };
-  }, [load, unload, loadWorkflows]);
+  }, [load, unload, loadWorkflows, unloadWorkflows]);
 
   return (
     <div className="w-full h-full flex flex-col bg-zinc-950">

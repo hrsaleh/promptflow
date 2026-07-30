@@ -29,8 +29,10 @@ teammates create their own accounts and join with that code.
 ### Collaboration behavior
 
 - Everyone in the workspace sees the same prompts and categories.
+- Saved workflows and workflow folders are shared with the team.
 - Prompt changes appear live without refreshing.
 - Each prompt displays its author’s name and assigned color.
-- Only an author can rename, edit, or delete their own saved prompt.
+- The workspace creator is the admin and can edit or delete any team prompt or workflow.
+- Regular members can edit or delete only their own prompts and workflows.
 - Bookmarks are personal and appear only in that teammate’s Bookmarks tab.
-- Workflows and canvas autosaves remain local to each browser for now.
+- Unsaved canvas tabs and automatic canvas recovery remain local to each browser.

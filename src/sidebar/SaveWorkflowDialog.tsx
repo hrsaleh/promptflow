@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useWorkflowLibraryStore } from '../store/workflowLibraryStore';
+import { useAuthStore } from '../store/authStore';
 import type { WorkflowSnapshot } from '../store/workflowStore';
 
 interface Props {
@@ -16,6 +17,9 @@ export function SaveWorkflowDialog({ snap, workflowId, onSaved, onClose }: Props
 
   const currentWorkflow = workflows.find((w) => w.id === workflowId) ?? null;
   const isLinked = !!currentWorkflow;
+  const userId = useAuthStore((s) => s.user?.id);
+  const isAdmin = useAuthStore((s) => s.team?.role === 'owner');
+  const canUpdateLinked = isLinked && (currentWorkflow?.authorId === userId || isAdmin);
 
   const [name, setName] = useState(
     currentWorkflow?.name ?? `Workflow ${new Date().toLocaleDateString()}`
@@ -34,7 +38,7 @@ export function SaveWorkflowDialog({ snap, workflowId, onSaved, onClose }: Props
         finalFolderId = await addFolder(newFolderName.trim());
       }
 
-      if (isLinked && !asNew) {
+      if (canUpdateLinked && !asNew) {
         await updateWorkflow(currentWorkflow!.id, {
           name: name.trim(),
           folderId: finalFolderId,
@@ -58,7 +62,7 @@ export function SaveWorkflowDialog({ snap, workflowId, onSaved, onClose }: Props
       <div className="relative bg-zinc-800 border border-zinc-600 rounded-xl shadow-2xl w-96 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold text-sm">
-            {isLinked ? 'Update Workflow' : 'Save Workflow'}
+            {canUpdateLinked ? 'Update Workflow' : isLinked ? 'Save Shared Workflow as Copy' : 'Save Workflow'}
           </h2>
           <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
             <X size={16} />
@@ -127,9 +131,9 @@ export function SaveWorkflowDialog({ snap, workflowId, onSaved, onClose }: Props
             onClick={() => handleSave(false)}
             disabled={saving || !name.trim()}
           >
-            {isLinked ? 'Update' : 'Save'}
+            {canUpdateLinked ? 'Update' : isLinked ? 'Save copy' : 'Save'}
           </button>
-          {isLinked && (
+          {canUpdateLinked && (
             <button
               className="bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded px-3 py-2 transition-colors disabled:opacity-50"
               onClick={() => handleSave(true)}

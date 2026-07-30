@@ -22,6 +22,7 @@ export interface TeamWorkspace {
   id: string;
   name: string;
   joinCode: string;
+  role: 'owner' | 'member';
 }
 
 interface AuthState {
@@ -42,14 +43,16 @@ interface AuthState {
   clearError: () => void;
 }
 
-async function loadIdentity(user: User) {
+async function loadIdentity(
+  user: User
+): Promise<{ profile: TeamProfile | null; team: TeamWorkspace | null }> {
   if (!supabase) return { profile: null, team: null };
 
   const [{ data: profileRow }, { data: membership }] = await Promise.all([
     supabase.from('profiles').select('id, display_name, color').eq('id', user.id).maybeSingle(),
     supabase
       .from('team_members')
-      .select('teams(id, name, join_code)')
+      .select('role, teams(id, name, join_code)')
       .eq('user_id', user.id)
       .limit(1)
       .maybeSingle(),
@@ -68,7 +71,12 @@ async function loadIdentity(user: User) {
         }
       : null,
     team: teamRow
-      ? { id: teamRow.id, name: teamRow.name, joinCode: teamRow.join_code }
+      ? {
+          id: teamRow.id,
+          name: teamRow.name,
+          joinCode: teamRow.join_code,
+          role: membership?.role === 'owner' ? 'owner' : 'member',
+        }
       : null,
   };
 }

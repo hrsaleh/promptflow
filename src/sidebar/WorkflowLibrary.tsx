@@ -5,7 +5,7 @@ import { WorkflowFolder } from './WorkflowFolder';
 import { WorkflowItem } from './WorkflowItem';
 
 export function WorkflowLibrary() {
-  const { workflows, folders, loaded } = useWorkflowLibraryStore();
+  const { workflows, folders, loaded, error } = useWorkflowLibraryStore();
   const [query, setQuery] = useState('');
 
   if (!loaded) {
@@ -40,6 +40,11 @@ export function WorkflowLibrary() {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto py-1">
+        {error && (
+          <div className="mx-2 my-2 rounded-md border border-red-500/20 bg-red-500/10 px-2.5 py-2 text-xs text-red-300">
+            {error}
+          </div>
+        )}
         {filtered ? (
           filtered.length === 0 ? (
             <div className="px-3 py-4 text-zinc-600 text-xs text-center">No results</div>

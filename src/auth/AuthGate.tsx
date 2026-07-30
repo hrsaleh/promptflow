@@ -242,6 +242,11 @@ export function TeamIdentity() {
       <div className="flex items-center gap-2">
         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: profile.color }} />
         <span className="text-xs text-zinc-300">{profile.displayName}</span>
+        {team.role === 'owner' && (
+          <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-400">
+            Admin
+          </span>
+        )}
       </div>
       <button onClick={signOut} className="text-xs text-zinc-600 hover:text-zinc-300">Sign out</button>
     </div>

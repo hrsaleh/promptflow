@@ -21,6 +21,7 @@ export function SavePromptDialog({
 }: Props) {
   const { categories, prompts, savePrompt, updatePrompt, addCategory } = useLibraryStore();
   const userId = useAuthStore((s) => s.user?.id);
+  const isAdmin = useAuthStore((s) => s.team?.role === 'owner');
   const [name, setName] = useState(initialName);
   const [categoryId, setCategoryId] = useState<string | null>(
     linkedPromptId
@@ -33,7 +34,7 @@ export function SavePromptDialog({
 
   const isLinked = !!linkedPromptId && prompts.some((p) => p.id === linkedPromptId);
   const linkedPrompt = prompts.find((p) => p.id === linkedPromptId);
-  const canUpdateLinked = isLinked && linkedPrompt?.authorId === userId;
+  const canUpdateLinked = isLinked && (linkedPrompt?.authorId === userId || isAdmin);
 
   const handleSave = async (asNew = false) => {
     if (!name.trim()) return;
