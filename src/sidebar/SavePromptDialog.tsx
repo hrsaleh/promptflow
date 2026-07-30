@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useLibraryStore } from '../store/libraryStore';
+import { useAuthStore } from '../store/authStore';
 
 interface Props {
   nodeId: string;
@@ -19,6 +20,7 @@ export function SavePromptDialog({
   onClose,
 }: Props) {
   const { categories, prompts, savePrompt, updatePrompt, addCategory } = useLibraryStore();
+  const userId = useAuthStore((s) => s.user?.id);
   const [name, setName] = useState(initialName);
   const [categoryId, setCategoryId] = useState<string | null>(
     linkedPromptId
@@ -30,6 +32,8 @@ export function SavePromptDialog({
   const [saving, setSaving] = useState(false);
 
   const isLinked = !!linkedPromptId && prompts.some((p) => p.id === linkedPromptId);
+  const linkedPrompt = prompts.find((p) => p.id === linkedPromptId);
+  const canUpdateLinked = isLinked && linkedPrompt?.authorId === userId;
 
   const handleSave = async (asNew = false) => {
     if (!name.trim()) return;
@@ -40,7 +44,7 @@ export function SavePromptDialog({
         finalCategoryId = await addCategory(newCatName.trim());
       }
 
-      if (isLinked && !asNew) {
+      if (canUpdateLinked && !asNew) {
         await updatePrompt(linkedPromptId!, { name: name.trim(), content, categoryId: finalCategoryId });
         onSaved(linkedPromptId!);
       } else {
@@ -65,7 +69,7 @@ export function SavePromptDialog({
       <div className="relative bg-zinc-800 border border-zinc-600 rounded-xl shadow-2xl w-96 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold text-sm">
-            {isLinked ? 'Update Prompt' : 'Save Prompt'}
+            {canUpdateLinked ? 'Update Prompt' : isLinked ? 'Save Shared Prompt as Copy' : 'Save Prompt'}
           </h2>
           <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
             <X size={16} />
@@ -135,9 +139,9 @@ export function SavePromptDialog({
             onClick={() => handleSave(false)}
             disabled={saving || !name.trim()}
           >
-            {isLinked ? 'Update' : 'Save'}
+            {canUpdateLinked ? 'Update' : isLinked ? 'Save copy' : 'Save'}
           </button>
-          {isLinked && (
+          {canUpdateLinked && (
             <button
               className="bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded px-3 py-2 transition-colors disabled:opacity-50"
               onClick={() => handleSave(true)}

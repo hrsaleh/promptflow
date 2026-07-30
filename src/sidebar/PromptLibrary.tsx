@@ -7,7 +7,7 @@ import { PromptItem } from './PromptItem';
 type Tab = 'all' | 'bookmarks';
 
 export function PromptLibrary() {
-  const { prompts, categories, loaded } = useLibraryStore();
+  const { prompts, categories, loaded, error } = useLibraryStore();
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<Tab>('all');
 
@@ -76,6 +76,11 @@ export function PromptLibrary() {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto py-1">
+        {error && (
+          <div className="mx-2 my-2 rounded-md border border-red-500/20 bg-red-500/10 px-2.5 py-2 text-xs text-red-300">
+            {error}
+          </div>
+        )}
         {filtered ? (
           /* Search results — flat list */
           filtered.length === 0 ? (

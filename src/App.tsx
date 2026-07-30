@@ -4,6 +4,7 @@ import { Canvas } from './canvas/Canvas';
 import { TabBar } from './canvas/TabBar';
 import { PromptLibrary } from './sidebar/PromptLibrary';
 import { WorkflowLibrary } from './sidebar/WorkflowLibrary';
+import { AuthGate, TeamIdentity } from './auth/AuthGate';
 import { useLibraryStore } from './store/libraryStore';
 import { useWorkflowLibraryStore } from './store/workflowLibraryStore';
 
@@ -36,15 +37,19 @@ function NavRail({ section, onSelect }: { section: Section; onSelect: (s: Sectio
   );
 }
 
-export default function App() {
+function Workspace() {
   const load = useLibraryStore((s) => s.load);
+  const unload = useLibraryStore((s) => s.unload);
   const loadWorkflows = useWorkflowLibraryStore((s) => s.load);
   const [section, setSection] = useState<Section>('prompts');
 
   useEffect(() => {
     load();
     loadWorkflows();
-  }, [load, loadWorkflows]);
+    return () => {
+      void unload();
+    };
+  }, [load, unload, loadWorkflows]);
 
   return (
     <div className="w-full h-full flex flex-col bg-zinc-950">
@@ -53,6 +58,7 @@ export default function App() {
         <span className="ml-3 text-zinc-600 text-xs">
           Double-click canvas to add nodes · Drag handles to connect · Drag from library to place
         </span>
+        <TeamIdentity />
       </header>
       <div className="flex-1 flex overflow-hidden">
         <NavRail section={section} onSelect={setSection} />
@@ -63,5 +69,13 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthGate>
+      <Workspace />
+    </AuthGate>
   );
 }

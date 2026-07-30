@@ -1,32 +1,36 @@
-# React + TypeScript + Vite
+# PromptFlow
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A visual, node-based prompt composition tool with a shared team prompt library.
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Team collaboration setup
+
+PromptFlow uses Supabase for individual accounts, shared prompts, author colors,
+personal bookmarks, and live updates.
+
+1. Create a Supabase project.
+2. Open the Supabase SQL Editor and run:
+   `supabase/migrations/202607300001_team_collaboration.sql`
+3. Copy `.env.example` to `.env.local`.
+4. In Supabase Project Settings → API, copy the project URL and publishable
+   (anon) key into `.env.local`.
+5. Restart `npm run dev`.
+
+The first teammate creates a workspace after signing in. They share the
+eight-character workspace code shown in the PromptFlow header. The other four
+teammates create their own accounts and join with that code.
+
+### Collaboration behavior
+
+- Everyone in the workspace sees the same prompts and categories.
+- Prompt changes appear live without refreshing.
+- Each prompt displays its author’s name and assigned color.
+- Only an author can rename, edit, or delete their own saved prompt.
+- Bookmarks are personal and appear only in that teammate’s Bookmarks tab.
+- Workflows and canvas autosaves remain local to each browser for now.

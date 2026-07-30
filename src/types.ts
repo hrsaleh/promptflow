@@ -31,6 +31,9 @@ export interface SavedPrompt {
   categoryId: string | null;
   bookmarked: boolean;
   tags: string[];
+  authorId: string;
+  authorName: string;
+  authorColor: string;
   createdAt: number;
   updatedAt: number;
 }

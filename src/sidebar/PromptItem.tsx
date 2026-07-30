@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Star, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react';
 import { useLibraryStore } from '../store/libraryStore';
+import { useAuthStore } from '../store/authStore';
 import type { SavedPrompt } from '../types';
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
 
 export function PromptItem({ prompt }: Props) {
   const { toggleBookmark, deletePrompt, updatePrompt } = useLibraryStore();
+  const userId = useAuthStore((s) => s.user?.id);
+  const isOwner = prompt.authorId === userId;
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(prompt.name);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -32,10 +35,14 @@ export function PromptItem({ prompt }: Props) {
 
   return (
     <div
-      className="group flex items-start gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-700/60 cursor-grab active:cursor-grabbing transition-colors"
+      className="group relative flex items-start gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-700/60 cursor-grab active:cursor-grabbing transition-colors overflow-hidden"
       draggable
       onDragStart={onDragStart}
     >
+      <span
+        className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full"
+        style={{ backgroundColor: prompt.authorColor }}
+      />
       <GripVertical size={12} className="text-zinc-600 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="flex-1 min-w-0">
@@ -66,8 +73,18 @@ export function PromptItem({ prompt }: Props) {
           </div>
         )}
         {!renaming && (
-          <div className="text-zinc-500 text-xs truncate leading-tight mt-0.5">
-            {prompt.content || <span className="italic">empty</span>}
+          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: prompt.authorColor }}
+            />
+            <span className="text-[10px] leading-tight shrink-0" style={{ color: prompt.authorColor }}>
+              {prompt.authorName}
+            </span>
+            <span className="text-zinc-600">·</span>
+            <span className="text-zinc-500 text-xs truncate leading-tight">
+              {prompt.content || <span className="italic">empty</span>}
+            </span>
           </div>
         )}
       </div>
@@ -81,36 +98,40 @@ export function PromptItem({ prompt }: Props) {
           >
             <Star size={11} fill={prompt.bookmarked ? 'currentColor' : 'none'} />
           </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); setRenaming(true); setDraft(prompt.name); }}
-            className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition-colors"
-            title="Rename"
-          >
-            <Pencil size={11} />
-          </button>
-          {confirmDelete ? (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); deletePrompt(prompt.id); }}
-                className="text-red-400 hover:text-red-300 p-0.5 text-xs font-medium"
-              >
-                del
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-                className="text-zinc-500 hover:text-white p-0.5"
-              >
-                <X size={10} />
-              </button>
-            </>
-          ) : (
+          {isOwner && (
             <button
-              onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-              className="text-zinc-600 hover:text-red-400 p-0.5 rounded transition-colors"
-              title="Delete"
+              onClick={(e) => { e.stopPropagation(); setRenaming(true); setDraft(prompt.name); }}
+              className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition-colors"
+              title="Rename"
             >
-              <Trash2 size={11} />
+              <Pencil size={11} />
             </button>
+          )}
+          {isOwner && (
+            confirmDelete ? (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deletePrompt(prompt.id); }}
+                  className="text-red-400 hover:text-red-300 p-0.5 text-xs font-medium"
+                >
+                  del
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
+                  className="text-zinc-500 hover:text-white p-0.5"
+                >
+                  <X size={10} />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                className="text-zinc-600 hover:text-red-400 p-0.5 rounded transition-colors"
+                title="Delete"
+              >
+                <Trash2 size={11} />
+              </button>
+            )
           )}
         </div>
       )}
