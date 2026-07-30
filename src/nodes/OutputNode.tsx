@@ -16,6 +16,8 @@ interface Props {
 }
 
 function OutputNodeComponent({ id, data, selected, width, height }: Props) {
+  const nodeWidth = width && width >= 280 ? width : 340;
+  const nodeHeight = height && height >= 150 ? height : 190;
   const updateNodeData = useGraphStore((s) => s.updateNodeData);
   const isConnected = useGraphStore((s) => {
     const tab = s.tabs.find((t) => t.id === s.activeTabId);
@@ -66,8 +68,8 @@ function OutputNodeComponent({ id, data, selected, width, height }: Props) {
       <div
         className="relative flex flex-col rounded-lg border bg-zinc-800 shadow-xl"
         style={{
-          width: width ?? 340,
-          height: height ?? 190,
+          width: nodeWidth,
+          height: nodeHeight,
           borderColor: selected ? '#34d399' : (data.color ?? '#52525b'),
         }}
       >

@@ -17,6 +17,9 @@ interface Props {
 }
 
 function ConcatenateNodeComponent({ id, data, selected, width, height }: Props) {
+  const minNodeHeight = HEADER_H + data.inputCount * ROW_H + 82;
+  const nodeWidth = width && width >= 240 ? width : 260;
+  const nodeHeight = height && height >= minNodeHeight ? height : minNodeHeight;
   const updateNodeData = useGraphStore((s) => s.updateNodeData);
   const [collapsed, setCollapsed] = useState(false);
   const handles = Array.from({ length: data.inputCount }, (_, i) => i);
@@ -39,16 +42,16 @@ function ConcatenateNodeComponent({ id, data, selected, width, height }: Props) 
     <div
       className="relative flex flex-col overflow-hidden rounded-lg border bg-zinc-800 shadow-xl"
       style={{
-        width: width ?? 260,
-        height: collapsed ? 'auto' : (height ?? 'auto'),
-        minHeight: collapsed ? undefined : HEADER_H + data.inputCount * ROW_H + 82,
+        width: nodeWidth,
+        height: collapsed ? 'auto' : nodeHeight,
+        minHeight: collapsed ? undefined : minNodeHeight,
         borderColor: selected ? '#34d399' : (data.color ?? '#52525b'),
       }}
     >
       <NodeResizer
         isVisible={!!selected && !collapsed}
         minWidth={240}
-        minHeight={HEADER_H + data.inputCount * ROW_H + 82}
+        minHeight={minNodeHeight}
         color="#34d399"
         lineStyle={{ borderWidth: 1 }}
         handleStyle={{ width: 8, height: 8, borderRadius: 2 }}

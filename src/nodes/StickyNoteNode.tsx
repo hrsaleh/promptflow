@@ -14,6 +14,8 @@ interface Props {
 }
 
 function StickyNoteNodeComponent({ id, data, selected, width, height }: Props) {
+  const nodeWidth = width && width >= 160 ? width : 240;
+  const nodeHeight = height && height >= 140 ? height : 210;
   const updateNodeData = useGraphStore((s) => s.updateNodeData);
   const noteColor = data.color ?? '#fbbf24';
 
@@ -34,8 +36,8 @@ function StickyNoteNodeComponent({ id, data, selected, width, height }: Props) {
       <div
         className="relative flex flex-col overflow-hidden rounded-sm shadow-[0_12px_28px_rgba(0,0,0,0.24)]"
         style={{
-          width: width ?? 240,
-          height: height ?? 210,
+          width: nodeWidth,
+          height: nodeHeight,
           backgroundColor: noteColor,
           outline: selected ? '2px solid rgba(255,255,255,0.9)' : '1px solid rgba(0,0,0,0.14)',
           outlineOffset: selected ? 2 : 0,

@@ -16,6 +16,8 @@ interface Props {
 }
 
 function PromptNodeComponent({ id, data, selected, width, height }: Props) {
+  const nodeWidth = width && width >= 220 ? width : 280;
+  const nodeHeight = height && height >= 140 ? height : 180;
   const updateNodeData  = useGraphStore((s) => s.updateNodeData);
   const savePrompt      = useLibraryStore((s) => s.savePrompt);
   const toggleBookmark  = useLibraryStore((s) => s.toggleBookmark);
@@ -72,8 +74,8 @@ function PromptNodeComponent({ id, data, selected, width, height }: Props) {
       <div
         className="relative flex flex-col bg-zinc-800 rounded-lg shadow-xl border"
         style={{
-          width: width ?? 280,
-          height: collapsed ? 'auto' : (height ?? 180),
+          width: nodeWidth,
+          height: collapsed ? 'auto' : nodeHeight,
           borderColor: selected ? '#34d399' : (data.color ?? '#52525b'),
         }}
       >
