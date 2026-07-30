@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/prepare-sites-build.mjs",
+    "build:github": "tsc -b && vite build --base=/promptflow/",
     "lint": "oxlint",
     "preview": "vite preview"
   },
