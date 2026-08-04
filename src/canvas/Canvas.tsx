@@ -60,9 +60,13 @@ function FlowCanvas() {
 
       if (!inInput && !mod && (e.key === 'Delete' || e.key === 'Backspace')) {
         const selectedIds = activeTab.nodes.filter((node) => node.selected).map((node) => node.id);
+        const selectedEdgeIds = activeTab.edges.filter((edge) => edge.selected).map((edge) => edge.id);
         if (selectedIds.length > 0) {
           e.preventDefault();
           deleteNodes(selectedIds);
+        } else if (selectedEdgeIds.length > 0) {
+          e.preventDefault();
+          onEdgesChange(selectedEdgeIds.map((id) => ({ id, type: 'remove' as const })));
         }
       }
 
@@ -82,7 +86,18 @@ function FlowCanvas() {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [undo, redo, copySelected, paste, deleteNodes, groupSelected, ungroupSelected, activeTab.nodes]);
+  }, [
+    undo,
+    redo,
+    copySelected,
+    paste,
+    deleteNodes,
+    groupSelected,
+    ungroupSelected,
+    onEdgesChange,
+    activeTab.nodes,
+    activeTab.edges,
+  ]);
 
   // ── Validation ───────────────────────────────────────────────────────────
   const isValidConnection = useCallback((connection: Edge | Connection) => {
