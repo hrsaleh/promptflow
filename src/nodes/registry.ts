@@ -3,11 +3,13 @@ import { PromptNode } from './PromptNode';
 import { ConcatenateNode } from './ConcatenateNode';
 import { OutputNode } from './OutputNode';
 import { StickyNoteNode } from './StickyNoteNode';
+import { GroupNode } from './GroupNode';
 import type {
   PromptNodeData,
   ConcatNodeData,
   OutputNodeData,
   StickyNoteNodeData,
+  GroupNodeData,
 } from '../types';
 
 export const nodeTypes: NodeTypes = {
@@ -15,10 +17,11 @@ export const nodeTypes: NodeTypes = {
   concatenate: ConcatenateNode as NodeTypes[string],
   output: OutputNode as NodeTypes[string],
   stickyNote: StickyNoteNode as NodeTypes[string],
+  group: GroupNode as NodeTypes[string],
 };
 
 export const nodeDefaults: Record<string, {
-  data: PromptNodeData | ConcatNodeData | OutputNodeData | StickyNoteNodeData;
+  data: PromptNodeData | ConcatNodeData | OutputNodeData | StickyNoteNodeData | GroupNodeData;
   label: string;
   description: string;
 }> = {

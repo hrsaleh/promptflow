@@ -30,6 +30,9 @@ function FlowCanvas() {
   const redo = useGraphStore((s) => s.redo);
   const copySelected = useGraphStore((s) => s.copySelected);
   const paste = useGraphStore((s) => s.paste);
+  const deleteNodes = useGraphStore((s) => s.deleteNodes);
+  const groupSelected = useGraphStore((s) => s.groupSelected);
+  const ungroupSelected = useGraphStore((s) => s.ungroupSelected);
 
   const activeTab = tabs.find((t) => t.id === activeTabId)!;
 
@@ -53,16 +56,31 @@ function FlowCanvas() {
         target.isContentEditable;
       const mod = e.metaKey || e.ctrlKey;
 
+      if (!inInput && !mod && (e.key === 'Delete' || e.key === 'Backspace')) {
+        const selectedIds = activeTab.nodes.filter((node) => node.selected).map((node) => node.id);
+        if (selectedIds.length > 0) {
+          e.preventDefault();
+          deleteNodes(selectedIds);
+        }
+      }
+
       if (mod && !inInput) {
         if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
         if ((e.key === 'z' && e.shiftKey) || e.key === 'y') { e.preventDefault(); redo(); }
         if (e.key === 'c') { e.preventDefault(); copySelected(); }
         if (e.key === 'v') { e.preventDefault(); paste(); }
+        if (e.key.toLowerCase() === 'g' && e.shiftKey) {
+          e.preventDefault();
+          ungroupSelected();
+        } else if (e.key.toLowerCase() === 'g') {
+          e.preventDefault();
+          groupSelected();
+        }
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [undo, redo, copySelected, paste]);
+  }, [undo, redo, copySelected, paste, deleteNodes, groupSelected, ungroupSelected, activeTab.nodes]);
 
   // ── Validation ───────────────────────────────────────────────────────────
   const isValidConnection = useCallback((connection: Edge | Connection) => {
@@ -139,7 +157,8 @@ function FlowCanvas() {
         onMoveEnd={onMoveEnd}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        deleteKeyCode={['Backspace', 'Delete']}
+        deleteKeyCode={null}
+        selectionKeyCode={['Meta', 'Control']}
         zoomOnDoubleClick={false}
         snapToGrid
         snapGrid={[16, 16]}

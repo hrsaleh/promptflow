@@ -61,7 +61,8 @@ textarea {
 .react-flow__node-prompt,
 .react-flow__node-concatenate,
 .react-flow__node-output,
-.react-flow__node-stickyNote {
+.react-flow__node-stickyNote,
+.react-flow__node-group {
   background: transparent;
   padding: 0;
   border: none;

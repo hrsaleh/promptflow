@@ -36,6 +36,41 @@ function recomputeConcatInputs(nodeId: string, edges: Edge[], nodes: Node[]): No
   );
 }
 
+function nodeDimensions(node: Node): { width: number; height: number } {
+  const defaults: Record<string, { width: number; height: number }> = {
+    prompt: { width: 280, height: 180 },
+    concatenate: { width: 260, height: 146 },
+    output: { width: 340, height: 190 },
+    stickyNote: { width: 240, height: 210 },
+    group: { width: 520, height: 320 },
+  };
+  const fallback = defaults[node.type ?? ''] ?? { width: 240, height: 160 };
+  const styleWidth = typeof node.style?.width === 'number' ? node.style.width : undefined;
+  const styleHeight = typeof node.style?.height === 'number' ? node.style.height : undefined;
+  return {
+    width: node.measured?.width ?? styleWidth ?? fallback.width,
+    height: node.measured?.height ?? styleHeight ?? fallback.height,
+  };
+}
+
+function detachChildren(nodes: Node[], groupIds: Set<string>, deletingIds = groupIds): Node[] {
+  const groups = new Map(
+    nodes.filter((node) => groupIds.has(node.id)).map((node) => [node.id, node])
+  );
+  return nodes.map((node) => {
+    if (!node.parentId || !groupIds.has(node.parentId) || deletingIds.has(node.id)) return node;
+    const group = groups.get(node.parentId);
+    return {
+      ...node,
+      parentId: undefined,
+      extent: undefined,
+      position: group
+        ? { x: group.position.x + node.position.x, y: group.position.y + node.position.y }
+        : node.position,
+    };
+  });
+}
+
 function computeTab(tab: OpenTab): OpenTab {
   const nodeValues = evaluate(tab.nodes, tab.edges);
   const nodes = tab.nodes.map((n) =>
@@ -126,6 +161,8 @@ interface GraphState {
   addNode: (node: Node) => void;
   updateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   deleteNodes: (ids: string[]) => void;
+  groupSelected: () => void;
+  ungroupSelected: () => void;
 
   // Undo/redo — scoped to the active tab
   snapshot: () => void;
@@ -305,11 +342,107 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     set({
       tabs: patchActive(tabs, activeTabId, (tab) => {
         const base = snapshotTab(tab);
-        const nodes = base.nodes.filter((n) => !idSet.has(n.id));
+        const groupIds = new Set(
+          base.nodes
+            .filter((node) => idSet.has(node.id) && node.type === 'group')
+            .map((node) => node.id)
+        );
+        const nodes = detachChildren(base.nodes, groupIds, idSet).filter(
+          (node) => !idSet.has(node.id)
+        );
         const edges = base.edges.filter(
           (e) => !idSet.has(e.source) && !idSet.has(e.target)
         );
         return computeTab({ ...base, nodes, edges, isDirty: true });
+      }),
+    });
+  },
+
+  groupSelected: () => {
+    const { tabs, activeTabId } = get();
+    set({
+      tabs: patchActive(tabs, activeTabId, (tab) => {
+        const selected = tab.nodes.filter(
+          (node) => node.selected && node.type !== 'group' && !node.parentId
+        );
+        if (selected.length < 2) return tab;
+
+        const base = snapshotTab(tab);
+        const selectedIds = new Set(selected.map((node) => node.id));
+        const bounds = selected.reduce(
+          (acc, node) => {
+            const size = nodeDimensions(node);
+            return {
+              minX: Math.min(acc.minX, node.position.x),
+              minY: Math.min(acc.minY, node.position.y),
+              maxX: Math.max(acc.maxX, node.position.x + size.width),
+              maxY: Math.max(acc.maxY, node.position.y + size.height),
+            };
+          },
+          { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+        );
+        const groupId = `group-${Date.now()}`;
+        const padding = 28;
+        const header = 36;
+        const groupPosition = {
+          x: bounds.minX - padding,
+          y: bounds.minY - header - padding,
+        };
+        const existingNumbers = base.nodes
+          .filter((node) => node.type === 'group')
+          .map((node) => Number(String(node.data.title ?? '').match(/^Group (\d+)$/)?.[1] ?? 0));
+        const groupNumber = Math.max(0, ...existingNumbers) + 1;
+        const groupNode: Node = {
+          id: groupId,
+          type: 'group',
+          position: groupPosition,
+          data: { title: `Group ${groupNumber}`, color: '#38bdf8' },
+          style: {
+            width: bounds.maxX - bounds.minX + padding * 2,
+            height: bounds.maxY - bounds.minY + padding * 2 + header,
+          },
+          selected: true,
+          zIndex: -1,
+        };
+        const children = base.nodes.map((node) =>
+          selectedIds.has(node.id)
+            ? {
+                ...node,
+                parentId: groupId,
+                position: {
+                  x: node.position.x - groupPosition.x,
+                  y: node.position.y - groupPosition.y,
+                },
+                selected: false,
+              }
+            : { ...node, selected: false }
+        );
+        return computeTab({ ...base, nodes: [groupNode, ...children], isDirty: true });
+      }),
+    });
+  },
+
+  ungroupSelected: () => {
+    const { tabs, activeTabId } = get();
+    set({
+      tabs: patchActive(tabs, activeTabId, (tab) => {
+        const groupIds = new Set<string>();
+        tab.nodes.forEach((node) => {
+          if (node.selected && node.type === 'group') groupIds.add(node.id);
+          if (node.selected && node.parentId) groupIds.add(node.parentId);
+        });
+        if (groupIds.size === 0) return tab;
+
+        const base = snapshotTab(tab);
+        const childIds = new Set(
+          base.nodes
+            .filter((node) => node.parentId && groupIds.has(node.parentId))
+            .map((node) => node.id)
+        );
+        const nodes = detachChildren(base.nodes, groupIds)
+          .filter((node) => !groupIds.has(node.id))
+          .map((node) => ({ ...node, selected: childIds.has(node.id) }));
+        return computeTab({ ...base, nodes, isDirty: true });
       }),
     });
   },
@@ -362,7 +495,13 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   copySelected: () => {
     const { tabs, activeTabId } = get();
     const tab = tabs.find((t) => t.id === activeTabId)!;
-    const selected = tab.nodes.filter((n) => n.selected);
+    const selectedIds = new Set(
+      tab.nodes.filter((node) => node.selected).map((node) => node.id)
+    );
+    tab.nodes.forEach((node) => {
+      if (node.parentId && selectedIds.has(node.parentId)) selectedIds.add(node.id);
+    });
+    const selected = tab.nodes.filter((node) => selectedIds.has(node.id));
     if (selected.length === 0) return;
     const ids = new Set(selected.map((n) => n.id));
     set({
@@ -381,13 +520,18 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       tabs: patchActive(tabs, activeTabId, (tab) => {
         const base = snapshotTab(tab);
         const idMap = new Map<string, string>();
-        const newNodes: Node[] = clipboard.nodes.map((n, i) => {
-          const newId = `${n.type ?? 'node'}-${stamp}-${i}`;
-          idMap.set(n.id, newId);
+        clipboard.nodes.forEach((node, i) => {
+          idMap.set(node.id, `${node.type ?? 'node'}-${stamp}-${i}`);
+        });
+        const newNodes: Node[] = clipboard.nodes.map((n) => {
+          const newId = idMap.get(n.id)!;
           return {
             ...n,
             id: newId,
-            position: { x: n.position.x + 40, y: n.position.y + 40 },
+            position: n.parentId
+              ? n.position
+              : { x: n.position.x + 40, y: n.position.y + 40 },
+            parentId: n.parentId ? idMap.get(n.parentId) : undefined,
             selected: true,
           };
         });
