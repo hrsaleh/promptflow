@@ -130,7 +130,16 @@ function FlowCanvas() {
   const onDrop = useCallback(
     async (event: React.DragEvent) => {
       event.preventDefault();
-      const imageFiles = Array.from(event.dataTransfer.files).filter(isImageFile);
+      event.stopPropagation();
+      const transferredFiles = Array.from(event.dataTransfer.files);
+      if (transferredFiles.length === 0) {
+        for (const item of Array.from(event.dataTransfer.items)) {
+          if (item.kind !== 'file') continue;
+          const file = item.getAsFile();
+          if (file) transferredFiles.push(file);
+        }
+      }
+      const imageFiles = transferredFiles.filter(isImageFile);
       if (imageFiles.length > 0) {
         const origin = screenToFlowPosition({ x: event.clientX, y: event.clientY });
         await Promise.all(imageFiles.map(async (file, index) => {
@@ -184,7 +193,11 @@ function FlowCanvas() {
   );
 
   return (
-    <div className="flex-1 relative w-full h-full">
+    <div
+      className="flex-1 relative w-full h-full"
+      onDragOverCapture={onDragOver}
+      onDropCapture={onDrop}
+    >
       <ReactFlow
         nodes={activeTab.nodes}
         edges={activeTab.edges}
@@ -195,8 +208,6 @@ function FlowCanvas() {
         isValidConnection={isValidConnection}
         onPaneClick={onPaneClick}
         onMoveEnd={onMoveEnd}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
         deleteKeyCode={null}
         selectionKeyCode={['Meta', 'Control']}
         minZoom={0.1}
