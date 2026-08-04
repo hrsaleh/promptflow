@@ -159,6 +159,7 @@ function FlowCanvas() {
         onDrop={onDrop}
         deleteKeyCode={null}
         selectionKeyCode={['Meta', 'Control']}
+        minZoom={0.1}
         zoomOnDoubleClick={false}
         snapToGrid
         snapGrid={[16, 16]}
