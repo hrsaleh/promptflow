@@ -16,6 +16,7 @@ import { nodeTypes } from '../nodes/registry';
 import { hasCycle } from '../eval/evaluate';
 import { AddNodePalette } from './AddNodePalette';
 import { WorkflowBar } from './WorkflowBar';
+import { isImageFile, uploadWorkflowImage } from '../lib/imageStorage';
 import type { SavedPrompt } from '../types';
 
 function FlowCanvas() {
@@ -25,6 +26,7 @@ function FlowCanvas() {
   const onEdgesChange = useGraphStore((s) => s.onEdgesChange);
   const onConnect = useGraphStore((s) => s.onConnect);
   const addNode = useGraphStore((s) => s.addNode);
+  const updateNodeData = useGraphStore((s) => s.updateNodeData);
   const setTabViewport = useGraphStore((s) => s.setTabViewport);
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
@@ -119,15 +121,53 @@ function FlowCanvas() {
     [screenToFlowPosition]
   );
 
-  // ── Drag-and-drop from sidebar ───────────────────────────────────────────
+  // ── Drag-and-drop from sidebar or desktop ───────────────────────────────
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
   }, []);
 
   const onDrop = useCallback(
-    (event: React.DragEvent) => {
+    async (event: React.DragEvent) => {
       event.preventDefault();
+      const imageFiles = Array.from(event.dataTransfer.files).filter(isImageFile);
+      if (imageFiles.length > 0) {
+        const origin = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        await Promise.all(imageFiles.map(async (file, index) => {
+          const id = `image-${Date.now()}-${index}`;
+          const previewUrl = URL.createObjectURL(file);
+          addNode({
+            id,
+            type: 'image',
+            position: { x: origin.x + index * 28, y: origin.y + index * 28 },
+            data: {
+              title: file.name.replace(/\.[^.]+$/, '') || 'Image',
+              previewUrl,
+              mimeType: file.type,
+              status: 'uploading',
+            },
+          });
+          try {
+            const storagePath = await uploadWorkflowImage(file);
+            updateNodeData(id, {
+              storagePath,
+              previewUrl: undefined,
+              status: 'ready',
+              error: undefined,
+            });
+          } catch (error) {
+            updateNodeData(id, {
+              previewUrl: undefined,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Image upload failed.',
+            });
+          } finally {
+            URL.revokeObjectURL(previewUrl);
+          }
+        }));
+        return;
+      }
+
       const raw = event.dataTransfer.getData('application/promptflow');
       if (!raw) return;
       try {
@@ -140,7 +180,7 @@ function FlowCanvas() {
         });
       } catch { /* invalid drag data */ }
     },
-    [screenToFlowPosition, addNode]
+    [screenToFlowPosition, addNode, updateNodeData]
   );
 
   return (

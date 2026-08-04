@@ -42,6 +42,7 @@ function nodeDimensions(node: Node): { width: number; height: number } {
     concatenate: { width: 260, height: 146 },
     output: { width: 340, height: 190 },
     stickyNote: { width: 240, height: 210 },
+    image: { width: 320, height: 260 },
     group: { width: 520, height: 320 },
   };
   const fallback = defaults[node.type ?? ''] ?? { width: 240, height: 160 };

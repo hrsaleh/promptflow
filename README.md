@@ -17,6 +17,9 @@ personal bookmarks, and live updates.
 1. Create a Supabase project.
 2. Open the Supabase SQL Editor and run:
    `supabase/migrations/202607300001_team_collaboration.sql`
+
+   Then apply the remaining migrations in filename order, including
+   `202608040001_workflow_image_storage.sql` for shared canvas images.
 3. Copy `.env.example` to `.env.local`.
 4. In Supabase Project Settings → API, copy the project URL and publishable
    (anon) key into `.env.local`.

@@ -4,12 +4,14 @@ import { ConcatenateNode } from './ConcatenateNode';
 import { OutputNode } from './OutputNode';
 import { StickyNoteNode } from './StickyNoteNode';
 import { GroupNode } from './GroupNode';
+import { ImageNode } from './ImageNode';
 import type {
   PromptNodeData,
   ConcatNodeData,
   OutputNodeData,
   StickyNoteNodeData,
   GroupNodeData,
+  ImageNodeData,
 } from '../types';
 
 export const nodeTypes: NodeTypes = {
@@ -18,10 +20,11 @@ export const nodeTypes: NodeTypes = {
   output: OutputNode as NodeTypes[string],
   stickyNote: StickyNoteNode as NodeTypes[string],
   group: GroupNode as NodeTypes[string],
+  image: ImageNode as NodeTypes[string],
 };
 
 export const nodeDefaults: Record<string, {
-  data: PromptNodeData | ConcatNodeData | OutputNodeData | StickyNoteNodeData | GroupNodeData;
+  data: PromptNodeData | ConcatNodeData | OutputNodeData | StickyNoteNodeData | GroupNodeData | ImageNodeData;
   label: string;
   description: string;
 }> = {
@@ -44,6 +47,11 @@ export const nodeDefaults: Record<string, {
     label: 'Sticky Note',
     description: 'A colorful note with no wire connections',
     data: { text: '', color: '#fbbf24' } satisfies StickyNoteNodeData,
+  },
+  image: {
+    label: 'Image',
+    description: 'A shared, resizable image reference',
+    data: { title: 'Image', status: 'empty' } satisfies ImageNodeData,
   },
 };
 
